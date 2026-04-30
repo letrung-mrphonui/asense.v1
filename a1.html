@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>a.SENSE Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cr:#8B0000;--crm:#A50000;--crb:#C0152A;
+  --g:#C9A84C;--gl:#E8C76A;--gd:#7a5828;
+  --bg:#090303;--bgc:#110707;--bgp:#170909;--bgi:#0e0505;
+  --bd:rgba(201,168,76,.14);--bdg:rgba(201,168,76,.32);--bde:rgba(201,168,76,.55);
+  --tp:#F5EDE0;--tm:#9C8070;--td:#4a3535;
+  --grn:#3dba7a;--red:#e06060;
+  --sh:0 0 28px rgba(201,168,76,.1);
+  --r:4px;--rs:2px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--tp);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
+  opacity:.45}
+
+/* ── HEADER ── */
+header{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;
+  height:68px;padding:0 44px;
+  background:linear-gradient(160deg,#190606 0%,#230909 45%,#190606 100%);
+  border-bottom:1px solid var(--bdg);box-shadow:0 2px 36px rgba(0,0,0,.8)}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.65rem;font-weight:700;letter-spacing:.14em;
+  color:var(--g);text-shadow:0 0 28px rgba(201,168,76,.3);display:flex;align-items:center;gap:11px}
+.dot{width:7px;height:7px;background:var(--crb);border-radius:50%;box-shadow:0 0 9px var(--crb);flex-shrink:0}
+.hdr-right{display:flex;align-items:center;gap:18px}
+.sync-row{display:flex;align-items:center;gap:7px;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tm)}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--td);transition:background .3s}
+.sdot.live{background:var(--grn);box-shadow:0 0 7px var(--grn);animation:blink 2s infinite}
+.sdot.spin{background:var(--g);animation:blink .5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.timer{font-size:.62rem;color:var(--td);font-variant-numeric:tabular-nums;letter-spacing:.06em;min-width:70px}
+.btn{font-family:'Jost',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:var(--r);cursor:pointer;transition:all .2s;border:1px solid var(--bd)}
+.btn-outline{background:rgba(201,168,76,.08);color:var(--g);padding:7px 15px}
+.btn-outline:hover{background:rgba(201,168,76,.18);border-color:var(--bdg)}
+.btn-primary{background:linear-gradient(135deg,var(--cr),var(--crm));color:var(--tp);
+  border-color:transparent;padding:10px 26px;box-shadow:0 3px 14px rgba(139,0,0,.35)}
+.btn-primary:hover{background:linear-gradient(135deg,var(--crm),var(--crb));transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--tm);padding:8px 16px}
+.btn-ghost:hover{color:var(--tp);border-color:var(--bd)}
+.btn-sm{padding:5px 12px;font-size:.62rem}
+.btn-danger{background:rgba(192,21,42,.15);border-color:rgba(192,21,42,.3);color:#d06060;padding:5px 12px;font-size:.62rem}
+.btn-danger:hover{background:rgba(192,21,42,.28)}
+
+/* ── SETUP BANNER ── */
+#setupBanner{position:relative;z-index:15;
+  background:linear-gradient(90deg,rgba(139,0,0,.25),rgba(201,168,76,.12),rgba(139,0,0,.25));
+  border-bottom:1px solid rgba(201,168,76,.22);
+  padding:10px 44px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#setupBanner.hidden{display:none}
+.banner-text{font-size:.72rem;color:var(--tp);flex:1}
+.banner-text b{color:var(--gl)}
+.banner-steps{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.step-badge{background:rgba(201,168,76,.12);border:1px solid var(--bd);border-radius:var(--rs);
+  padding:4px 10px;font-size:.62rem;color:var(--g);letter-spacing:.06em;white-space:nowrap}
+
+/* ── FILTER BAR ── */
+.filterbar{position:relative;z-index:10;
+  background:#0c0404;border-bottom:1px solid var(--bd);
+  padding:10px 44px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.fl{font-size:.61rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tm);white-space:nowrap}
+select.fs,input.fs{background:var(--bgi);border:1px solid var(--bd);color:var(--tp);
+  border-radius:var(--rs);padding:6px 9px;font-size:.7rem;font-family:'Jost',sans-serif;
+  outline:none;cursor:pointer;transition:border-color .2s}
+select.fs:hover,input.fs:hover,select.fs:focus,input.fs:focus{border-color:var(--bdg)}
+select.fs option{background:#1a0808}
+.fvsep{width:1px;height:18px;background:var(--bd)}
+.btn-reset-f{background:none;border:1px solid rgba(192,21,42,.25);color:#b05050;
+  font-family:'Jost',sans-serif;font-size:.61rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 11px;border-radius:var(--rs);cursor:pointer;transition:all .2s}
+.btn-reset-f:hover{border-color:var(--crb);color:var(--crb)}
+#finfo{margin-left:auto;font-size:.63rem;color:var(--td)}
+
+/* ── TABS ── */
+.tabnav{position:relative;z-index:10;display:flex;background:#0a0303;border-bottom:1px solid var(--bd);padding:0 44px}
+.tabbt{font-family:'Jost',sans-serif;font-size:.73rem;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--tm);background:none;border:none;
+  padding:15px 26px;cursor:pointer;position:relative;transition:color .3s}
+.tabbt::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--cr),var(--g));transform:scaleX(0);transition:transform .3s}
+.tabbt:hover{color:var(--tp)}
+.tabbt.on{color:var(--gl)}
+.tabbt.on::after{transform:scaleX(1)}
+
+/* ── MAIN ── */
+main{position:relative;z-index:5;padding:32px 44px 56px}
+.tab{display:none}
+.tab.on{display:block;animation:fi .35s ease}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── KPI ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:24px}
+.kc{background:var(--bgc);border:1px solid var(--bd);border-radius:var(--r);
+  padding:17px 15px 13px;position:relative;overflow:hidden;
+  transition:border-color .3s,box-shadow .3s;cursor:pointer}
+.kc:hover{border-color:var(--bdg);box-shadow:var(--sh)}
+.kc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cr),var(--g))}
+.kc .eh{position:absolute;top:7px;right:9px;font-size:.52rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gd);opacity:0;transition:opacity .2s}
+.kc:hover .eh{opacity:1}
+.kl{font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;color:var(--tm);margin-bottom:5px}
+.kv{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:700;color:var(--gl);line-height:1}
+.kv .u{font-size:.85rem;color:var(--tm)}
+.ks{font-size:.64rem;color:var(--td);margin-top:4px;line-height:1.5}
+.kbadge{display:inline-block;padding:1px 6px;border-radius:2px;font-size:.6rem;font-weight:600;
+  background:rgba(139,0,0,.28);color:#f07070;border:1px solid rgba(139,0,0,.38)}
+.kbadge.p{background:rgba(0,100,60,.22);color:#50d090;border-color:rgba(0,120,70,.32)}
+/* edit popup */
+.kedit{display:none;position:absolute;inset:0;background:rgba(9,3,3,.93);
+  flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:5;
+  border-radius:var(--r);padding:10px}
+.kedit.show{display:flex}
+.kedit input{width:90%;background:rgba(201,168,76,.08);border:1px solid var(--bde);
+  color:var(--gl);font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;
+  border-radius:var(--rs);padding:5px 8px;outline:none;text-align:center}
+.kedit .row{display:flex;gap:6px}
+
+/* ── SECTION ── */
+.stitle{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;
+  letter-spacing:.06em;color:var(--g);margin-bottom:13px;display:flex;align-items:center;gap:11px}
+.stitle::before{content:'';display:block;width:22px;height:1px;background:var(--crb)}
+
+/* ── CHART GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.g3{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px}
+.cc{background:var(--bgc);border:1px solid var(--bd);border-radius:var(--r);
+  padding:20px 20px 14px;transition:border-color .3s;margin-bottom:18px}
+.cc:last-child{margin-bottom:0}
+.cc:hover{border-color:rgba(201,168,76,.2)}
+.ct{font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tm);margin-bottom:13px}
+.cw{position:relative}
+
+/* ── ACTIVITY ── */
+.agrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:9px;margin-bottom:18px}
+.ac{background:var(--bgp);border:1px solid var(--bd);border-radius:var(--r);
+  padding:12px 12px 9px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
+.ac:hover{border-color:var(--bdg)}
+.ac .eh{position:absolute;top:5px;right:7px;font-size:.5rem;color:var(--gd);opacity:0;transition:opacity .2s}
+.ac:hover .eh{opacity:1}
+.al{font-size:.57rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tm);margin-bottom:3px}
+.av{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:700;color:var(--gl)}
+.as_{font-size:.58rem;color:var(--td);margin-top:2px}
+
+/* ── TABLE ── */
+.tw{overflow-x:auto;margin-bottom:18px}
+.tbl{width:100%;border-collapse:collapse;font-size:.7rem}
+.tbl thead th{padding:8px 10px;text-align:left;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  font-size:.58rem;color:var(--tm);background:#110606;border-bottom:1px solid var(--bd);white-space:nowrap}
+.tbl thead th.r{text-align:right}
+.tbl tbody tr{border-bottom:1px solid rgba(201,168,76,.05);transition:background .2s}
+.tbl tbody tr:hover{background:rgba(201,168,76,.04)}
+.tbl td{padding:7px 10px;vertical-align:middle;white-space:nowrap;color:var(--tp)}
+.tbl td.n{font-weight:500;color:var(--gl);font-size:.68rem;white-space:normal;min-width:130px}
+.tbl td.r{text-align:right;font-variant-numeric:tabular-nums}
+.tbl td.ec{cursor:pointer;transition:color .2s}
+.tbl td.ec:hover{color:var(--gl)}
+.tbl td.ec:hover::after{content:' ✎';font-size:.55rem;color:var(--gd)}
+
+.rb{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;
+  border-radius:2px;font-size:.58rem;font-weight:700;
+  background:rgba(139,0,0,.2);color:#c05050;border:1px solid rgba(139,0,0,.22)}
+.rb.g{background:rgba(201,168,76,.17);color:var(--g);border-color:var(--bdg)}
+.rb.s{background:rgba(180,180,200,.07);color:#b0b8c8;border-color:rgba(150,160,180,.16)}
+.rb.b{background:rgba(180,100,40,.1);color:#c87840;border-color:rgba(160,80,30,.2)}
+
+.pb{width:62px;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle}
+.pbf{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cr),var(--g))}
+.pill{display:inline-block;padding:1px 6px;border-radius:2px;font-size:.58rem;font-weight:600}
+.phi{background:rgba(0,100,60,.18);color:#50d090;border:1px solid rgba(0,120,70,.28)}
+.pmd{background:rgba(180,130,0,.13);color:#d4a030;border:1px solid rgba(160,110,0,.22)}
+.plo{background:rgba(139,0,0,.18);color:#e06060;border:1px solid rgba(139,0,0,.28)}
+
+/* ── LEGEND ── */
+.leg{display:flex;gap:11px;flex-wrap:wrap;margin-top:7px}
+.li{display:flex;align-items:center;gap:5px;font-size:.61rem;color:var(--tm)}
+.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── TABLE SEARCH ── */
+.tsearch{background:var(--bgi);border:1px solid var(--bd);color:var(--tp);
+  border-radius:var(--rs);padding:7px 11px;font-size:.7rem;font-family:'Jost',sans-serif;
+  outline:none;width:240px;margin-bottom:11px;transition:border-color .2s}
+.tsearch:focus{border-color:var(--bdg)}
+.tsearch::placeholder{color:var(--td)}
+.divider{height:1px;background:var(--bd);margin:20px 0}
+
+/* ── LOADING ── */
+#loader{position:fixed;inset:0;z-index:200;background:rgba(9,3,3,.92);
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(3px)}
+#loader.show{display:flex}
+.spinner{width:38px;height:38px;border:2px solid var(--bd);border-top-color:var(--g);
+  border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ltxt{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tm)}
+
+/* ── CONFIG MODAL ── */
+#cfgModal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.78);
+  display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;backdrop-filter:blur(4px)}
+#cfgModal.show{display:flex}
+.cfg{background:#160808;border:1px solid var(--bdg);border-radius:6px;
+  width:680px;max-width:100%;padding:36px 38px;position:relative;
+  box-shadow:0 24px 80px rgba(0,0,0,.92)}
+.cfg::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cr),var(--g))}
+.cfgT{font-family:'Cormorant Garamond',serif;font-size:1.35rem;color:var(--g);margin-bottom:4px;letter-spacing:.06em}
+.cfgS{font-size:.7rem;color:var(--tm);margin-bottom:26px;line-height:1.7}
+.cfgLabel{font-size:.63rem;letter-spacing:.11em;text-transform:uppercase;color:var(--tm);margin-bottom:6px;display:block}
+.cfgIn{width:100%;background:var(--bgi);border:1px solid var(--bd);color:var(--tp);
+  border-radius:var(--r);padding:10px 13px;font-size:.73rem;font-family:'Jost',sans-serif;
+  outline:none;transition:border-color .2s;margin-bottom:4px}
+.cfgIn:focus{border-color:var(--bde)}
+.cfgIn::placeholder{color:var(--td)}
+.cfgHint{font-size:.61rem;color:var(--td);line-height:1.6;margin-bottom:16px}
+.cfgHint code{background:rgba(201,168,76,.07);padding:1px 5px;border-radius:2px;color:var(--gd);font-size:.6rem}
+.cfgDiv{height:1px;background:var(--bd);margin:18px 0}
+.cfgSec{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--g);margin-bottom:12px}
+.cfg-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--td);font-size:1rem;cursor:pointer;transition:color .2s}
+.cfg-close:hover{color:var(--g)}
+.cfg-actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+/* Instruction box */
+.ibox{background:rgba(201,168,76,.04);border:1px solid var(--bd);border-radius:var(--r);padding:14px 15px;font-size:.67rem;color:var(--tm);line-height:2}
+.ibox b{color:var(--tp)} .ibox .warn{color:var(--g);font-size:.62rem}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;z-index:300;background:#150707;
+  border:1px solid var(--bdg);border-radius:var(--r);padding:11px 18px;
+  font-size:.7rem;color:var(--tp);box-shadow:0 8px 28px rgba(0,0,0,.8);
+  transform:translateY(70px);opacity:0;transition:all .3s;pointer-events:none;max-width:340px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-color:rgba(61,186,122,.35);color:var(--grn)}
+#toast.err{border-color:rgba(192,21,42,.35);color:var(--red)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--cr);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader"><div class="spinner"></div><div class="ltxt" id="ltxt">Đang kết nối…</div></div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CONFIG MODAL -->
+<div id="cfgModal">
+ <div class="cfg">
+  <button class="cfg-close" onclick="closeCfg()">✕</button>
+  <div class="cfgT">⚙ Cấu Hình Kết Nối Google Sheet</div>
+  <div class="cfgS">Dán URL Web App từ Google Apps Script vào ô bên dưới.</div>
+
+  <div class="cfgSec">🔗 Apps Script Web App URL</div>
+  <label class="cfgLabel">URL (lấy sau khi Deploy trong Apps Script)</label>
+  <input class="cfgIn" id="inUrl" placeholder="https://script.google.com/macros/s/AKfy.../exec">
+  <div class="cfgHint">
+    Đây là URL duy nhất cần điền. Dashboard sẽ gọi URL này để lấy toàn bộ data.<br>
+    Xem hướng dẫn deploy trong file <code>asense_apps_script.js</code>
+  </div>
+
+  <div class="cfgDiv"></div>
+  <div class="cfgSec">⏱ Tự Động Refresh</div>
+  <label class="cfgLabel">Chu kỳ</label>
+  <select class="cfgIn" id="inInterval" style="cursor:pointer">
+    <option value="0">Tắt auto-refresh</option>
+    <option value="300000" selected>Mỗi 5 phút</option>
+    <option value="600000">Mỗi 10 phút</option>
+    <option value="1800000">Mỗi 30 phút</option>
+  </select>
+
+  <div class="cfgDiv"></div>
+  <div class="cfgSec">📋 Hướng Dẫn Deploy Apps Script</div>
+  <div class="ibox">
+    1. Mở Google Sheet → <b>Extensions</b> → <b>Apps Script</b><br>
+    2. Xoá code cũ → Paste toàn bộ nội dung file <code>asense_apps_script.js</code><br>
+    3. Bấm <b>Deploy</b> → <b>New Deployment</b> → chọn type <b>Web App</b><br>
+    4. <b>Execute as: Me</b> &nbsp;|&nbsp; <b>Who has access: Anyone</b><br>
+    5. Bấm <b>Deploy</b> → Copy URL → Paste vào ô trên<br>
+    6. Bấm <b>Lưu & Kết Nối</b> bên dưới<br>
+    <span class="warn">⚠ Mỗi lần sửa code Apps Script phải Deploy lại (New Deployment)</span>
+  </div>
+
+  <div class="cfg-actions">
+    <button class="btn btn-primary" onclick="saveCfgAndFetch()">💾 Lưu & Kết Nối</button>
+    <button class="btn btn-ghost" onclick="useDemoData();closeCfg()">🎯 Dùng Demo Data</button>
+    <button class="btn btn-ghost" onclick="closeCfg()">Đóng</button>
+  </div>
+ </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo"><span class="dot"></span>a.SENSE Analytics</div>
+  <div class="hdr-right">
+    <div class="sync-row">
+      <div class="sdot" id="sdot"></div>
+      <span id="slabel">Chưa kết nối</span>
+    </div>
+    <div class="timer" id="timer"></div>
+    <button class="btn btn-outline" onclick="openCfg()">⚙ Cấu Hình</button>
+    <button class="btn btn-outline btn-sm" onclick="manualRefresh()" title="Refresh ngay">↻</button>
+  </div>
+</header>
+
+<!-- SETUP BANNER -->
+<div id="setupBanner">
+  <div class="banner-text">
+    <b>Chưa kết nối Google Sheet.</b> Làm theo 3 bước để xem dữ liệu thật:
+  </div>
+  <div class="banner-steps">
+    <span class="step-badge">1. Deploy Apps Script</span>
+    <span class="step-badge">2. Copy URL Web App</span>
+    <span class="step-badge">3. Bấm ⚙ Cấu Hình → Paste URL</span>
+  </div>
+  <button class="btn btn-outline btn-sm" onclick="openCfg()">Bắt đầu →</button>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filterbar">
+  <span class="fl">Tuần</span>
+  <select class="fs" id="fWeek" onchange="applyFilter()">
+    <option value="all">Tất cả</option>
+    <option value="1">Tuần 1</option>
+    <option value="2">Tuần 2</option>
+    <option value="3">Tuần 3</option>
+    <option value="4">Tuần 4</option>
+  </select>
+  <div class="fvsep"></div>
+  <span class="fl">Từ ngày</span>
+  <input type="date" class="fs" id="fFrom" onchange="applyFilter()">
+  <span class="fl">Đến ngày</span>
+  <input type="date" class="fs" id="fTo" onchange="applyFilter()">
+  <button class="btn-reset-f" onclick="resetFilter()">✕ Reset</button>
+  <div id="finfo">Demo data</div>
+</div>
+
+<!-- TABS -->
+<nav class="tabnav">
+  <button class="tabbt on" onclick="setTab(0)">Tổng Quan</button>
+  <button class="tabbt"    onclick="setTab(1)">Trung Tâm</button>
+  <button class="tabbt"    onclick="setTab(2)">Nhân Viên</button>
+</nav>
+
+<main>
+
+<!-- TAB 0 -->
+<div class="tab on" id="tab0">
+  <div class="kpi-row" id="k0"></div>
+  <div class="g3">
+    <div class="cc"><div class="ct">Tổng Lượt Đón KH Mỗi Ngày</div><div class="cw" style="height:265px"><canvas id="cKH"></canvas></div></div>
+    <div class="cc"><div class="ct">Cơ Cấu Doanh Thu</div>
+      <div class="cw" style="height:200px"><canvas id="cPie0"></canvas></div>
+      <div class="leg"><div class="li"><div class="ld" style="background:#C0152A"></div>New Sale</div><div class="li"><div class="ld" style="background:#C9A84C"></div>Upsale</div><div class="li"><div class="ld" style="background:#7a3030"></div>Mua Lẻ DV</div><div class="li"><div class="ld" style="background:#3d1a1a"></div>Retail SP</div></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="ct">Doanh Thu Mỗi Ngày (triệu đồng)</div><div class="cw" style="height:245px"><canvas id="cRev"></canvas></div></div>
+    <div class="cc"><div class="ct">Khách Theo Khung Giờ – Cao/Thấp Điểm</div><div class="cw" style="height:245px"><canvas id="cHour"></canvas></div></div>
+  </div>
+  <div class="stitle">Gói Dịch Vụ</div>
+  <div class="cc"><div class="ct">Top 10 Gói Dịch Vụ Được Sử Dụng</div><div class="cw" style="height:245px"><canvas id="cSvc"></canvas></div></div>
+  <div class="stitle" style="margin-top:20px">Hoạt Động Triển Khai</div>
+  <div class="agrid" id="actGrid"></div>
+  <div class="cc"><div class="ct">Xu Hướng Hoạt Động Theo Ngày</div><div class="cw" style="height:220px"><canvas id="cAct"></canvas></div></div>
+</div>
+
+<!-- TAB 1 -->
+<div class="tab" id="tab1">
+  <div class="kpi-row" id="k1"></div>
+  <div class="stitle">Top 10 Doanh Thu</div>
+  <div class="cc"><div class="ct">Doanh Thu (triệu đồng)</div><div class="cw" style="height:275px"><canvas id="cTop10"></canvas></div></div>
+  <div class="stitle">Rating New Sale & Upsale (Top 15)</div>
+  <div class="g2">
+    <div class="cc"><div class="ct">Rating New Sale (%) Cao → Thấp</div><div class="cw" style="height:320px"><canvas id="cNS"></canvas></div></div>
+    <div class="cc"><div class="ct">Rating Upsale (%) Cao → Thấp</div><div class="cw" style="height:320px"><canvas id="cUP"></canvas></div></div>
+  </div>
+  <div class="stitle">Giá Trị TB Gói Bán (Top 15)</div>
+  <div class="g2">
+    <div class="cc"><div class="ct">TB Gói New Sale (nghìn đồng)</div><div class="cw" style="height:320px"><canvas id="cAvgNS"></canvas></div></div>
+    <div class="cc"><div class="ct">TB Gói Upsale (nghìn đồng)</div><div class="cw" style="height:320px"><canvas id="cAvgUP"></canvas></div></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="ct">Tỷ Trọng DS – Top 5</div><div class="cw" style="height:220px"><canvas id="cCPie"></canvas></div></div>
+    <div class="cc"><div class="ct">Turn KHHH vs KH Mới – Top 10</div><div class="cw" style="height:220px"><canvas id="cTurn"></canvas></div></div>
+  </div>
+  <div class="divider"></div>
+  <div class="stitle">Bảng Chi Tiết Tất Cả Trung Tâm</div>
+  <input class="tsearch" id="csearch" placeholder="🔍 Tìm trung tâm…" oninput="renderCT()">
+  <div class="tw">
+    <table class="tbl"><thead><tr>
+      <th>#</th><th>Trung Tâm</th><th class="r">DS (tr.đ)</th>
+      <th class="r">Tổng KH</th><th class="r">KHHH</th><th class="r">KH Mới</th>
+      <th class="r">NS</th><th class="r">Rating NS%</th>
+      <th class="r">UP</th><th class="r">Rating UP%</th>
+      <th class="r">TB NS (k)</th><th class="r">TB UP (k)</th>
+      <th class="r">Turn</th><th class="r">DS Bar</th>
+    </tr></thead><tbody id="ctbody"></tbody></table>
+  </div>
+</div>
+
+<!-- TAB 2 -->
+<div class="tab" id="tab2">
+  <div class="kpi-row" id="k2"></div>
+  <div class="stitle">Cơ Cấu Doanh Thu Theo Kênh</div>
+  <div class="g2">
+    <div class="cc"><div class="ct">So Sánh DS Từng Kênh (triệu đồng)</div><div class="cw" style="height:220px"><canvas id="cCh"></canvas></div></div>
+    <div class="cc"><div class="ct">Tỷ Trọng DS</div>
+      <div class="cw" style="height:185px"><canvas id="cChPie"></canvas></div>
+      <div class="leg"><div class="li"><div class="ld" style="background:#C0152A"></div>New Sale</div><div class="li"><div class="ld" style="background:#C9A84C"></div>Upsale</div><div class="li"><div class="ld" style="background:#7a3030"></div>Bán Lẻ DV</div><div class="li"><div class="ld" style="background:#3d1a1a"></div>Retail SP</div></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="ct">Số KTV Đi Làm Mỗi Ngày</div><div class="cw" style="height:220px"><canvas id="cKTV"></canvas></div></div>
+    <div class="cc"><div class="ct">SL Gói New Sale & Upsale Mỗi Ngày</div><div class="cw" style="height:220px"><canvas id="cSaleQ"></canvas></div></div>
+  </div>
+  <div class="stitle">DS Theo Kênh – Hàng Ngày</div>
+  <div class="cc"><div class="ct">DS New Sale / Upsale / Bán Lẻ DV / Retail SP (triệu đồng)</div><div class="cw" style="height:250px"><canvas id="cDSAll"></canvas></div></div>
+  <div class="g2">
+    <div class="cc"><div class="ct">Giá Trị TB Gói New vs Upsale Theo Ngày</div><div class="cw" style="height:220px"><canvas id="cAvgV"></canvas></div></div>
+    <div class="cc"><div class="ct">DS New Sale + Upsale Theo Tuần</div><div class="cw" style="height:220px"><canvas id="cWkly"></canvas></div></div>
+  </div>
+  <div class="stitle">Bảng Tuần</div>
+  <div class="tw">
+    <table class="tbl"><thead><tr>
+      <th>Tuần</th><th>Ngày</th>
+      <th class="r">DS Bán Gói (tr)</th><th class="r">SL Bán Gói</th>
+      <th class="r">DS New (tr)</th><th class="r">SL New</th>
+      <th class="r">DS Up (tr)</th><th class="r">SL Up</th>
+      <th class="r">DS Lẻ DV (tr)</th><th class="r">DS Retail (tr)</th>
+      <th class="r">Turn KH</th>
+    </tr></thead><tbody id="wkbody"></tbody></table>
+  </div>
+</div>
+
+</main>
+
+<script>
+/* ══════════════════════════════════════════
+   DEMO DATA
+══════════════════════════════════════════ */
+const DEMO = {
+  days:['1/4','2/4','3/4','4/4','5/4','6/4','7/4','8/4','9/4','10/4','11/4','12/4','13/4','14/4','15/4','16/4','17/4','18/4','19/4','20/4','21/4','22/4','23/4','24/4','25/4','26/4'],
+  dates:['2026-04-01','2026-04-02','2026-04-03','2026-04-04','2026-04-05','2026-04-06','2026-04-07','2026-04-08','2026-04-09','2026-04-10','2026-04-11','2026-04-12','2026-04-13','2026-04-14','2026-04-15','2026-04-16','2026-04-17','2026-04-18','2026-04-19','2026-04-20','2026-04-21','2026-04-22','2026-04-23','2026-04-24','2026-04-25','2026-04-26'],
+  wk:[1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,4],
+  kh:[459,414,423,521,646,414,421,460,435,478,566,676,413,447,473,472,486,596,733,449,458,479,494,512,583,459],
+  rv:[102.93,70.47,95.39,108.48,195.16,77.76,84.78,68.60,106.27,93.39,118.03,149.46,102.80,68.92,84.41,74.24,155.15,221.49,209.77,133.87,116.06,114.88,95.32,99.68,205.20,146.18],
+  ns:[20,22,16,14,32,11,12,11,23,9,24,28,15,14,14,12,15,29,34,18,16,13,13,14,36,23],
+  up:[17,7,20,14,23,14,15,13,16,20,18,21,16,8,15,13,44,43,43,25,21,33,18,29,48,26],
+  ktv:[138,131,129,144,143,132,137,135,140,138,149,140,131,131,124,125,125,148,145,113,116,119,123,130,134,117],
+  dsNS:[40.23,28.75,29.82,39.68,79.71,17.83,31.64,18.41,36.37,18.99,45.67,57.27,46.52,23.61,24.72,22.33,27.84,72.13,60.39,56.40,32.24,20.58,31.53,18.89,80.19,59.77],
+  dsUP:[33.96,13.89,28.21,18.54,63.56,29.92,25.51,24.79,38.62,34.17,31.48,47.80,31.83,14.27,23.97,23.42,87.95,109.47,103.31,53.02,50.97,63.03,34.84,49.53,89.57,41.76],
+  dsML:[24.09,27.71,36.09,44.23,44.35,28.34,26.65,25.17,28.34,36.88,39.50,38.41,21.00,27.81,30.19,27.85,27.68,36.49,45.23,21.79,27.22,26.94,25.65,29.66,32.02,29.93],
+  dsRT:[4.64,0.13,1.27,6.03,7.54,1.67,0.98,0.22,2.94,3.36,1.38,5.98,3.46,3.23,5.53,0.65,11.69,3.40,0.84,2.66,5.64,4.33,3.31,1.60,3.42,14.73],
+  aNS:[2011703,1306773,1863538,2834054,2490906,1620545,2636500,1673818,1581148,2109889,1903096,2045488,3101393,1686071,1765971,1860633,1855907,2487328,1776157,3133300,2014744,1583308,2425077,1349114,2227494,2598757],
+  aUP:[1997882,1984286,1410700,1324143,2763474,2137143,1700800,1907154,2413688,1708250,1748778,2276143,1989375,1784250,1597933,1801462,1998750,2545781,2402526,2120888,2427000,1909976,1935278,1707972,1865950,1606038],
+  appKH:[12,6,9,12,10,12,9,12,11,17,12,13,18,2,9,17,14,9,20,8,11,8,13,9,14,8],
+  vch:[90,100,80,45,80,100,90,50,100,55,75,51,128,125,166,145,20,93,0,53,55,70,50,0,110,60],
+  ggm:[5,2,2,2,5,2,3,4,3,6,3,5,0,0,3,0,2,0,4,3,2,2,5,2,4,2],
+  sessions:{
+    lb:['Ca1 08:30','Ca2 09:00','Ca3 09:30','Ca4 10:00','Ca5 10:30','Ca6 11:00','Ca7 11:30','Ca8 12:00','Ca9 12:30','Ca10 13:00','Ca11 13:30','Ca12 14:00','Ca13 14:30','Ca14 15:00','Ca15 15:30','Ca16 16:00','Ca17 16:30','Ca18 17:00','Ca19 17:30','Ca20 18:00','Ca21 18:30','Ca22 19:00','Ca23 19:30','Ca24 20:00','Ca25 20:30','Ca26 21:00','Ca27 21:30','Ca28 22:00'],
+    ct:[69,228,248,315,317,362,235,445,406,451,314,581,567,608,443,587,495,562,467,601,559,505,435,554,453,353,225,125]
+  },
+  svcs:{lb:['Gội Thanh Lọc Sâu','Gội a.SENSE Signature','Detox Cổ Vai Gáy','Gội Express Xả Sạch','Nail Care','Triệt Lông','Sạch Sâu Cân Bằng','Da Tươi Mọng Nước','Sạch Mụn','Tái CB Da Đầu'],ct:[4301,2460,932,3141,566,944,486,324,155,217]},
+  act:[{l:'KHHH Tải App',v:295,s:'hội hàng tải app'},{l:'Phát Voucher',v:1991,s:'voucher đã phát'},{l:'Mời GG Map',v:71,s:'lượt mời review'},{l:'Dùng Voucher',v:43,s:'lượt sử dụng'},{l:'KH New Tải App',v:14,s:'lượt đăng ký'},{l:'KH Nhận Quà',v:6,s:'lượt nhận quà'},{l:'Contact Thu',v:16,s:'contact xin được'},{l:'Khiếu Nại',v:0,s:'không có khiếu nại',g:true}],
+  kpi0:[{l:'Tổng Doanh Thu',v:'3.099',u:'tỷ',s:'KPI: 5.505 tỷ',b:'56,3%'},{l:'Tổng Lượt Đón KH',v:'12.969',s:'TB 499 / ngày'},{l:'New Sale',v:'488',u:'gói',s:'DS: 1.021 tr',b:'14,3%'},{l:'Upsale',v:'580',u:'gói',s:'DS: 1.167 tr',b:'6,1%'},{l:'Mua Lẻ DV',v:'4.343',u:'lượt',s:'DS: 809 tr'},{l:'DS Retail SP',v:'100,6',u:'tr',s:'KHHH: 10.888 · Mới: 3.256'}],
+  kpi1:[{l:'Số Trung Tâm',v:'46',s:'Toàn quốc'},{l:'DS Cao Nhất',v:'258,7',u:'tr',s:'Jasmine 1 Hà Đô Centrosa'},{l:'DS TB / TT',v:'69,6',u:'tr',s:'Tháng 4/2026'},{l:'Rating NS TB',v:'14,34%',s:'TB Gói: 2.093.228đ'},{l:'Rating UP TB',v:'6,06%',s:'TB Gói: 2.012.713đ'}],
+  kpi2:[{l:'SL KTV TB/ngày',v:'115',s:'Max: 149 · Min: 113'},{l:'DS Bán Gói',v:'2.175,8',u:'tr',s:'SL: 1.059 GD'},{l:'DS Bán Lẻ DV',v:'806,7',u:'tr',s:'SL: 4.381 lượt'},{l:'DS Retail SP',v:'100,6',u:'tr',s:'Sản phẩm tại quầy'},{l:'Rating New Sale',v:'14,34%',s:'TB 2.093.228đ'},{l:'Rating Upsale',v:'6,06%',s:'TB 2.012.713đ'}],
+  centers:[
+    {n:'Jasmine 1 Hà Đô Centrosa',rev:258.73,khhh:628,khMoi:81,ns:10,us:61,turn:1021,aNS:2694500,aUP:3081115},
+    {n:'H1 Masteri Waterfront',rev:157.85,khhh:283,khMoi:121,ns:23,us:26,turn:587,aNS:2669861,aUP:2203623},
+    {n:'West Lumière Riverside',rev:150.42,khhh:359,khMoi:157,ns:14,us:41,turn:719,aNS:1854400,aUP:2040659},
+    {n:'GH6 Glory Heights GP',rev:149.59,khhh:157,khMoi:108,ns:8,us:36,turn:450,aNS:2102000,aUP:2172361},
+    {n:'AK9 Akari City',rev:144.35,khhh:275,khMoi:146,ns:13,us:44,turn:602,aNS:3016231,aUP:1811023},
+    {n:'S2.02 RainBow GP',rev:143.53,khhh:169,khMoi:87,ns:13,us:37,turn:458,aNS:2066000,aUP:2489486},
+    {n:'L1 Landmark Ecopark',rev:135.92,khhh:107,khMoi:167,ns:27,us:7,turn:377,aNS:2908900,aUP:2247286},
+    {n:'Park 8 Times City',rev:123.56,khhh:445,khMoi:64,ns:11,us:23,turn:701,aNS:2643236,aUP:2385870},
+    {n:'Đoàn Trần Nghiệp',rev:112.98,khhh:278,khMoi:60,ns:15,us:29,turn:370,aNS:2001840,aUP:1976814},
+    {n:'E Lumiere Boulevard',rev:95.82,khhh:119,khMoi:36,ns:26,us:11,turn:280,aNS:2232015,aUP:1668455},
+    {n:'T10 Times City',rev:89.68,khhh:218,khMoi:40,ns:7,us:16,turn:373,aNS:1820393,aUP:3104538},
+    {n:'Masteri A Smart City',rev:78.66,khhh:294,khMoi:15,ns:9,us:21,turn:487,aNS:1886844,aUP:1768886},
+    {n:'CT2 Hateco',rev:76.88,khhh:22,khMoi:5,ns:27,us:0,turn:136,aNS:2253211,aUP:0},
+    {n:'I1 Imperia Smart City',rev:75.60,khhh:241,khMoi:27,ns:9,us:13,turn:361,aNS:2194467,aUP:2393108},
+    {n:'Nguyễn Đình Chiểu',rev:73.87,khhh:138,khMoi:52,ns:12,us:19,turn:211,aNS:1775667,aUP:2318263},
+    {n:'R4 Royal City',rev:73.22,khhh:430,khMoi:44,ns:10,us:21,turn:625,aNS:2346735,aUP:1551238},
+    {n:'S2 Vinhomes Symphony',rev:69.95,khhh:209,khMoi:18,ns:20,us:6,turn:375,aNS:2075690,aUP:1711667},
+    {n:'N01 New Horizon',rev:65.72,khhh:81,khMoi:19,ns:21,us:5,turn:179,aNS:2310733,aUP:1867800},
+    {n:'BS9 Tropical GP',rev:63.11,khhh:101,khMoi:63,ns:17,us:14,turn:244,aNS:1765112,aUP:776964},
+    {n:'C14 Bắc Hà',rev:62.52,khhh:79,khMoi:21,ns:16,us:4,turn:193,aNS:2083719,aUP:1580000},
+    {n:'Solforest Ecopark',rev:55.51,khhh:71,khMoi:49,ns:9,us:6,turn:168,aNS:2614667,aUP:2389500},
+    {n:'W2 West Point',rev:53.75,khhh:244,khMoi:47,ns:4,us:7,turn:459,aNS:3864000,aUP:1724286},
+    {n:'Sky B Imperia Garden',rev:52.50,khhh:171,khMoi:14,ns:7,us:11,turn:261,aNS:3430143,aUP:1633455},
+    {n:'Mipec',rev:58.28,khhh:236,khMoi:39,ns:9,us:13,turn:392,aNS:1653556,aUP:1790662},
+    {n:'HH-N01 Goldseason',rev:53.18,khhh:165,khMoi:55,ns:7,us:6,turn:288,aNS:2953800,aUP:2612567},
+    {n:'S3 Skylake',rev:56.71,khhh:129,khMoi:33,ns:18,us:7,turn:248,aNS:1512578,aUP:1586514},
+    {n:'S4.02 Sapphire 4',rev:49.65,khhh:165,khMoi:109,ns:5,us:8,turn:345,aNS:1447550,aUP:2237375},
+    {n:'18T2 Việt Hưng GP',rev:48.16,khhh:54,khMoi:4,ns:23,us:1,turn:147,aNS:1700504,aUP:840000},
+    {n:'Pearl 1 Mỹ Đình',rev:47.74,khhh:86,khMoi:8,ns:17,us:8,turn:229,aNS:1740024,aUP:0},
+    {n:'Tropical Feliz Homes',rev:46.78,khhh:66,khMoi:11,ns:20,us:1,turn:207,aNS:1492310,aUP:59000},
+    {n:'BS8 Tropical GP',rev:44.65,khhh:119,khMoi:17,ns:5,us:7,turn:328,aNS:1753600,aUP:1594457},
+    {n:'S1.03 Sapphire SC',rev:44.24,khhh:111,khMoi:38,ns:11,us:6,turn:236,aNS:1806182,aUP:1654000},
+    {n:'Xã Đàn',rev:43.86,khhh:93,khMoi:68,ns:12,us:15,turn:197,aNS:2469175,aUP:311333},
+    {n:'G1 Green Bay',rev:35.66,khhh:109,khMoi:0,ns:10,us:0,turn:232,aNS:1292000,aUP:0},
+    {n:'P1.01 Pavilion OP',rev:32.82,khhh:50,khMoi:23,ns:4,us:5,turn:111,aNS:3684250,aUP:2249000},
+    {n:'Giảng Võ',rev:29.51,khhh:147,khMoi:41,ns:5,us:7,turn:248,aNS:2390560,aUP:1154371},
+    {n:'SA3 Sakura SC',rev:27.42,khhh:48,khMoi:79,ns:3,us:3,turn:172,aNS:2004583,aUP:1349333},
+    {n:'S7.02 Origami GP',rev:26.09,khhh:95,khMoi:2,ns:8,us:1,turn:215,aNS:1045000,aUP:0},
+    {n:'Tô Hiến Thành',rev:24.51,khhh:127,khMoi:15,ns:2,us:6,turn:194,aNS:1910000,aUP:2088000},
+    {n:'C Sunshine Green',rev:24.02,khhh:7,khMoi:2,ns:14,us:1,turn:39,aNS:1512429,aUP:810000},
+    {n:'Duy Tân',rev:23.94,khhh:81,khMoi:2,ns:14,us:2,turn:143,aNS:1109857,aUP:1110000},
+    {n:'V3 Terra An Hưng',rev:23.90,khhh:83,khMoi:15,ns:5,us:6,turn:156,aNS:882000,aUP:1728167},
+    {n:'S6.02 Origami GP',rev:23.12,khhh:46,khMoi:38,ns:2,us:9,turn:109,aNS:1539000,aUP:735556},
+    {n:'S10.07 Origami GP',rev:21.29,khhh:34,khMoi:41,ns:4,us:5,turn:109,aNS:1360000,aUP:540000},
+    {n:'Thái Hà',rev:21.79,khhh:112,khMoi:9,ns:2,us:2,turn:191,aNS:2025000,aUP:1350000},
+    {n:'SA5 Sakura SC',rev:16.74,khhh:58,khMoi:53,ns:0,us:2,turn:150,aNS:0,aUP:2401500},
+    {n:'S2.15 Sapphire OP',rev:15.63,khhh:24,khMoi:16,ns:1,us:3,turn:63,aNS:840000,aUP:2992000},
+  ].sort((a,b)=>b.rev-a.rev)
+};
+DEMO.centers.forEach(c=>{c.tk=c.khhh+c.khMoi;c.rNS=c.tk>0?c.ns/c.tk*100:0;c.rUP=c.tk>0?c.us/c.tk*100:0});
+
+/* ══ STATE ══ */
+let D=JSON.parse(JSON.stringify(DEMO));
+let CH={};
+let FS={wk:'all',from:'',to:''};
+let rTimer=null,cdTimer=null,rMs=300000,nextR=0;
+
+/* ══ HELPERS ══ */
+const $=id=>document.getElementById(id);
+const sum=a=>a.reduce((x,y)=>x+y,0);
+function fIdx(){
+  return D.days.map((_,i)=>i).filter(i=>{
+    if(FS.wk!=='all'&&D.wk[i]!==+FS.wk)return false;
+    if(FS.from&&D.dates[i]<FS.from)return false;
+    if(FS.to&&D.dates[i]>FS.to)return false;
+    return true;
+  });
+}
+function fl(a){const idx=fIdx();return idx.map(i=>a[i])}
+function flb(){return fIdx().map(i=>D.days[i])}
+function mk(ctx,c1,c2,h=260){const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,c1);g.addColorStop(1,c2);return g}
+
+/* ══ CHART HELPERS ══ */
+Chart.defaults.color='#9C8070';Chart.defaults.font.family="'Jost',sans-serif";Chart.defaults.font.size=11;
+const GR={color:'rgba(201,168,76,.07)',drawBorder:false};
+const TK={color:'#9C8070'};
+const NL={display:false};
+function dc(id){if(CH[id]){CH[id].destroy();delete CH[id]}}
+function mc(id,cfg){dc(id);CH[id]=new Chart($(id),cfg);return CH[id]}
+
+/* ══ FILTER ══ */
+function applyFilter(){
+  FS.wk=$('fWeek').value;FS.from=$('fFrom').value;FS.to=$('fTo').value;
+  const idx=fIdx();
+  $('finfo').textContent=idx.length===D.days.length?'Tất cả dữ liệu':`${idx.length} ngày (${D.days[idx[0]]}–${D.days[idx[idx.length-1]]})`;
+  renderAll();
+}
+function resetFilter(){
+  FS={wk:'all',from:'',to:''};
+  $('fWeek').value='all';$('fFrom').value='';$('fTo').value='';
+  $('finfo').textContent='Tất cả dữ liệu';renderAll();
+}
+
+/* ══ KPI ══ */
+function renderKPIs(){
+  [D.kpi0,D.kpi1,D.kpi2].forEach((arr,ti)=>{
+    $('k'+ti).innerHTML=arr.map((it,ji)=>`
+      <div class="kc" onclick="editKPI(${ti},${ji})">
+        <span class="eh">✎ sửa</span>
+        <div class="kl">${it.l}</div>
+        <div class="kv" id="kv${ti}_${ji}">${it.v}${it.u?`<span class="u"> ${it.u}</span>`:''}</div>
+        <div class="ks">${it.s||''}${it.b?` <span class="kbadge">${it.b}</span>`:''}</div>
+        <div class="kedit" id="ke${ti}_${ji}">
+          <input id="ki${ti}_${ji}" value="${it.v}" onclick="event.stopPropagation()"
+            onkeydown="if(event.key==='Enter')saveKPI(${ti},${ji});if(event.key==='Escape')closeKPI(${ti},${ji})">
+          <div class="row">
+            <button class="btn btn-sm" style="background:rgba(0,120,70,.25);border-color:rgba(0,150,80,.35);color:#50d090" onclick="event.stopPropagation();saveKPI(${ti},${ji})">✓</button>
+            <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();closeKPI(${ti},${ji})">✕</button>
+          </div>
+        </div>
+      </div>`).join('');
+  });
+}
+function editKPI(ti,ji){
+  document.querySelectorAll('.kedit').forEach(e=>e.classList.remove('show'));
+  $(`ke${ti}_${ji}`).classList.add('show');
+  $(`ki${ti}_${ji}`).focus();$(`ki${ti}_${ji}`).select();
+}
+function saveKPI(ti,ji){
+  const v=$(`ki${ti}_${ji}`).value.trim();
+  D[`kpi${ti}`][ji].v=v;
+  $(`kv${ti}_${ji}`).innerHTML=v+(D[`kpi${ti}`][ji].u?`<span class="u"> ${D[`kpi${ti}`][ji].u}</span>`:'');
+  closeKPI(ti,ji);toast('✓ Đã lưu','ok');
+}
+function closeKPI(ti,ji){$(`ke${ti}_${ji}`).classList.remove('show')}
+
+/* ══ ACTIVITY ══ */
+function renderActivity(){
+  $('actGrid').innerHTML=D.act.map((a,i)=>`
+    <div class="ac" onclick="editAct(${i})">
+      <span class="eh">✎</span>
+      <div class="al">${a.l}</div>
+      <div class="av" id="av${i}" style="color:${a.g?'var(--grn)':'var(--gl)'}">${(+a.v).toLocaleString()}</div>
+      <div class="as_" style="${a.g?'color:var(--grn)':''}">${a.s}</div>
+    </div>`).join('');
+}
+function editAct(i){
+  const nv=prompt(`Giá trị mới cho "${D.act[i].l}":`,D.act[i].v);
+  if(nv!==null&&!isNaN(+nv)){D.act[i].v=+nv;$('av'+i).textContent=(+nv).toLocaleString();toast('✓ Đã lưu','ok')}
+}
+
+/* ══ TAB 0 ══ */
+function renderTab0(){
+  const lbs=flb(),kh=fl(D.kh),rv=fl(D.rv);
+  const dNS=fl(D.dsNS),dUP=fl(D.dsUP),dML=fl(D.dsML),dRT=fl(D.dsRT);
+  const aK=fl(D.appKH),vch=fl(D.vch),gg=fl(D.ggm);
+  const tNS=sum(dNS),tUP=sum(dUP),tML=sum(dML),tRT=sum(D.dsRT);
+
+  mc('cKH',{type:'line',data:{labels:lbs,datasets:[{data:kh,borderColor:'#C9A84C',borderWidth:2,pointRadius:3,pointBackgroundColor:'#C9A84C',tension:.4,fill:true,backgroundColor:c=>mk(c.chart.ctx,'rgba(201,168,76,.28)','rgba(201,168,76,.01)',265)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:NL,tooltip:{callbacks:{label:v=>` ${v.raw} lượt`}}},scales:{x:{grid:GR,ticks:{...TK,maxRotation:45,font:{size:9}}},y:{grid:GR,ticks:TK}}}});
+
+  mc('cPie0',{type:'doughnut',data:{labels:['New Sale','Upsale','Mua Lẻ DV','Retail SP'],datasets:[{data:[+tNS.toFixed(1),+tUP.toFixed(1),+tML.toFixed(1),+tRT.toFixed(1)],backgroundColor:['#C0152A','#C9A84C','#7a3030','#3d1a1a'],borderColor:'#090303',borderWidth:2,hoverOffset:7}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>` ${v.label}: ${v.raw.toFixed(1)} tr`}}}}});
+
+  mc('cRev',{type:'line',data:{labels:lbs,datasets:[{data:rv,borderColor:'#C0152A',borderWidth:2,pointRadius:3,pointBackgroundColor:'#C0152A',tension:.4,fill:true,backgroundColor:c=>mk(c.chart.ctx,'rgba(192,21,42,.27)','rgba(192,21,42,.01)',245)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:NL,tooltip:{callbacks:{label:v=>` ${v.raw.toFixed(1)} tr.đ`}}},scales:{x:{grid:GR,ticks:{...TK,maxRotation:45,font:{size:9}}},y:{grid:GR,ticks:{...TK,callback:v=>v+'tr'}}}}});
+
+  const mxS=Math.max(...D.sessions.ct);
+  mc('cHour',{type:'bar',data:{labels:D.sessions.lb,datasets:[{data:D.sessions.ct,backgroundColor:D.sessions.ct.map(v=>{const p=v/mxS;return p>.85?'rgba(192,21,42,.95)':p>.65?'rgba(192,21,42,.62)':p>.45?'rgba(201,168,76,.5)':'rgba(100,60,60,.42)'}),borderRadius:2}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:NL,tooltip:{callbacks:{label:v=>` ${v.raw} khách`}}},scales:{x:{grid:GR,ticks:TK},y:{grid:{display:false},ticks:{...TK,font:{size:9}}}}}});
+
+  mc('cSvc',{type:'bar',data:{labels:D.svcs.lb,datasets:[{data:D.svcs.ct,backgroundColor:D.svcs.lb.map((_,i)=>`hsl(${350-i*12},64%,${26+i*3}%)`),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:NL},scales:{x:{grid:{display:false},ticks:{...TK,maxRotation:35,font:{size:9}}},y:{grid:GR,ticks:TK}}}});
+
+  mc('cAct',{type:'line',data:{labels:lbs,datasets:[
+    {label:'KHHH Tải App',data:aK,borderColor:'#C9A84C',borderWidth:2,tension:.4,pointRadius:2,fill:false},
+    {label:'Phát Voucher÷10',data:vch.map(v=>+(v/10).toFixed(1)),borderColor:'#C0152A',borderWidth:2,tension:.4,pointRadius:2,fill:false,borderDash:[4,3]},
+    {label:'Mời GG Map',data:gg,borderColor:'#7a5050',borderWidth:1.5,tension:.4,pointRadius:2,fill:false},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9C8070',font:{size:9},boxWidth:12,padding:9}},tooltip:{callbacks:{label:v=>v.datasetIndex===1?` Voucher: ${Math.round(v.raw*10)}`:` ${v.dataset.label}: ${v.raw}`}}},scales:{x:{grid:GR,ticks:{...TK,maxRotation:45,font:{size:9}}},y:{grid:GR,ticks:TK}}}});
+}
+
+/* ══ TAB 1 ══ */
+function renderTab1(){
+  const cs=D.centers,t10=cs.slice(0,10),t5=cs.slice(0,5);
+
+  mc('cTop10',{type:'bar',data:{labels:t10.map(c=>c.n.length>20?c.n.slice(0,18)+'…':c.n),datasets:[{data:t10.map(c=>c.rev),backgroundColor:t10.map((_,i)=>`rgba(192,21,42,${.92-i*.06})`),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:NL,tooltip:{callbacks:{label:v=>` ${v.raw.toFixed(2)} tr.đ`}}},scales:{x:{grid:{display:false},ticks:{...TK,maxRotation:35,font:{size:9}}},y:{grid:GR,ticks:{...TK,callback:v=>v+'tr'}}}}});
+
+  const t15NS=[...cs].filter(c=>c.rNS>0).sort((a,b)=>b.rNS-a.rNS).slice(0,15);
+  mc('cNS',{type:'bar',data:{labels:t15NS.map(c=>c.n.length>17?c.n.slice(0,15)+'…':c.n),datasets:[{data:t15NS.map(c=>+c.rNS.toFixed(1)),backgroundColor:t15NS.map((_,i)=>`rgba(192,21,42,${.9-i*.04})`),borderRadius:2}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:NL,tooltip:{callbacks:{label:v=>` ${v.raw}%`}}},scales:{x:{grid:GR,ticks:{...TK,callback:v=>v+'%'}},y:{grid:{display:false},ticks:{...TK,font:{size:9}}}}}});
+
+  const t15UP=[...cs].filter(c=>c.rUP>0).sort((a,b)=>b.rUP-a.rUP).slice(0,15);
+  mc('cUP',{type:'bar',data:{labels:t15UP.map(c=>c.n.length>17?c.n.slice(0,15)+'…':c.n),datasets:[{data:t15UP.map(c=>+c.rUP.toFixed(1)),backgroundColor:t15UP.map((_,i)=>`rgba(201,168,76,${.85-i*.04})`),borderRadius:2}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:NL,tooltip:{callbacks:{label:v=>` ${v.raw}%`}}},scales:{x:{grid:GR,ticks:{...TK,callback:v=>v+'%'}},y:{grid:{display:false},ticks:{...TK,font:{size:9}}}}}});
+
+  const taNS=[...cs].filter(c=>c.aNS>0).sort((a,b)=>b.aNS-a.aNS).slice(0,15);
+  mc('cAvgNS',{type:'bar',data:{labels:taNS.map(c=>c.n.length>17?c.n.slice(0,15)+'…':c.n),datasets:[{data:taNS.map(c=>Math.round(c.aNS/1000)),backgroundColor:taNS.map((_,i)=>`rgba(192,21,42,${.88-i*.04})`),borderRadius:2}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:NL,tooltip:{callbacks:{label:v=>` ${v.raw.toLocaleString()}k đ`}}},scales:{x:{grid:GR,ticks:{...TK,callback:v=>v+'k'}},y:{grid:{display:false},ticks:{...TK,font:{size:9}}}}}});
+
+  const taUP=[...cs].filter(c=>c.aUP>0).sort((a,b)=>b.aUP-a.aUP).slice(0,15);
+  mc('cAvgUP',{type:'bar',data:{labels:taUP.map(c=>c.n.length>17?c.n.slice(0,15)+'…':c.n),datasets:[{data:taUP.map(c=>Math.round(c.aUP/1000)),backgroundColor:taUP.map((_,i)=>`rgba(201,168,76,${.85-i*.04})`),borderRadius:2}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:NL,tooltip:{callbacks:{label:v=>` ${v.raw.toLocaleString()}k đ`}}},scales:{x:{grid:GR,ticks:{...TK,callback:v=>v+'k'}},y:{grid:{display:false},ticks:{...TK,font:{size:9}}}}}});
+
+  const oth=cs.slice(5).reduce((s,c)=>s+c.rev,0);
+  mc('cCPie',{type:'doughnut',data:{labels:[...t5.map(c=>c.n.slice(0,12)+'…'),'Còn lại'],datasets:[{data:[...t5.map(c=>c.rev),oth],backgroundColor:['#C0152A','#A01020','#C9A84C','#8B6020','#7a3030','#2a1010'],borderColor:'#090303',borderWidth:2,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#9C8070',font:{size:8},padding:5,boxWidth:9}},tooltip:{callbacks:{label:v=>` ${v.raw.toFixed(1)} tr.đ`}}}}});
+
+  mc('cTurn',{type:'bar',data:{labels:t10.map(c=>c.n.length>13?c.n.slice(0,11)+'…':c.n),datasets:[{label:'KHHH',data:t10.map(c=>c.khhh),backgroundColor:'rgba(192,21,42,.8)',borderRadius:2},{label:'KH Mới',data:t10.map(c=>c.khMoi),backgroundColor:'rgba(201,168,76,.55)',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#9C8070',font:{size:9},boxWidth:9}}},scales:{x:{stacked:true,grid:{display:false},ticks:{...TK,maxRotation:45,font:{size:8}}},y:{stacked:true,grid:GR,ticks:TK}}}});
+
+  renderCT();
+}
+
+function renderCT(){
+  const q=($('csearch')?.value||'').toLowerCase();
+  const data=D.centers.filter(c=>c.n.toLowerCase().includes(q));
+  const mx=data[0]?.rev||1;
+  $('ctbody').innerHTML=data.map((c,i)=>{
+    const bd=i===0?'g':i===1?'s':i===2?'b':'';
+    const pc=Math.min(100,Math.round(c.rev/mx*100));
+    const nc=c.rNS>15?'phi':c.rNS>8?'pmd':'plo';
+    const uc=c.rUP>8?'phi':c.rUP>4?'pmd':'plo';
+    return `<tr>
+      <td><span class="rb ${bd}">${i+1}</span></td>
+      <td class="n">${c.n}</td>
+      <td class="r ec" ondblclick="editCellRev(this,'${c.n}')">${c.rev.toFixed(2)}</td>
+      <td class="r">${c.tk.toLocaleString()}</td>
+      <td class="r">${c.khhh}</td><td class="r">${c.khMoi}</td>
+      <td class="r">${c.ns}</td>
+      <td class="r"><span class="pill ${nc}">${c.rNS.toFixed(1)}%</span></td>
+      <td class="r">${c.us}</td>
+      <td class="r"><span class="pill ${uc}">${c.rUP.toFixed(1)}%</span></td>
+      <td class="r">${c.aNS>0?(c.aNS/1000).toFixed(0)+'k':'–'}</td>
+      <td class="r">${c.aUP>0?(c.aUP/1000).toFixed(0)+'k':'–'}</td>
+      <td class="r">${c.turn.toLocaleString()}</td>
+      <td class="r"><div class="pb"><div class="pbf" style="width:${pc}%"></div></div></td>
+    </tr>`;
+  }).join('');
+}
+function editCellRev(td,name){
+  const cur=td.textContent.trim();
+  const inp=document.createElement('input');
+  inp.value=cur;inp.style.cssText='width:72px;background:rgba(201,168,76,.09);border:1px solid var(--bde);color:var(--gl);padding:2px 5px;border-radius:2px;font-size:.7rem;outline:none';
+  td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
+  const done=()=>{
+    const nv=parseFloat(inp.value);
+    if(!isNaN(nv)){const c=D.centers.find(x=>x.n===name);if(c){c.rev=nv;toast(`✓ ${name.slice(0,20)}: DS=${nv}`,'ok');renderTab1();}}
+    else{td.textContent=cur;}
+  };
+  inp.onblur=done;
+  inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){td.textContent=cur;}};
+}
+
+/* ══ TAB 2 ══ */
+function renderTab2(){
+  const lbs=flb();
+  const dNS=fl(D.dsNS),dUP=fl(D.dsUP),dML=fl(D.dsML),dRT=fl(D.dsRT);
+  const ktv=fl(D.ktv),ns=fl(D.ns),up=fl(D.up),aN=fl(D.aNS),aU=fl(D.aUP);
+  const tNS=sum(dNS),tUP=sum(dUP),tML=sum(dML),tRT=sum(dRT);
+
+  mc('cCh',{type:'bar',data:{labels:['New Sale','Upsale','Bán Lẻ DV','Retail SP'],datasets:[{data:[+tNS.toFixed(1),+tUP.toFixed(1),+tML.toFixed(1),+tRT.toFixed(1)],backgroundColor:['rgba(192,21,42,.85)','rgba(201,168,76,.7)','rgba(122,48,48,.8)','rgba(61,26,26,.9)'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:NL,tooltip:{callbacks:{label:v=>` ${v.raw.toFixed(1)} tr.đ`}}},scales:{x:{grid:{display:false},ticks:TK},y:{grid:GR,ticks:{...TK,callback:v=>v+'tr'}}}}});
+
+  mc('cChPie',{type:'doughnut',data:{labels:['New Sale','Upsale','Bán Lẻ DV','Retail SP'],datasets:[{data:[+tNS.toFixed(1),+tUP.toFixed(1),+tML.toFixed(1),+tRT.toFixed(1)],backgroundColor:['#C0152A','#C9A84C','#7a3030','#3d1a1a'],borderColor:'#090303',borderWidth:2,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>` ${v.raw.toFixed(1)} tr.đ`}}}}});
+
+  mc('cKTV',{type:'line',data:{labels:lbs,datasets:[{data:ktv,borderColor:'#C9A84C',borderWidth:2,pointRadius:3,pointBackgroundColor:'#C9A84C',tension:.4,fill:true,backgroundColor:c=>mk(c.chart.ctx,'rgba(201,168,76,.22)','rgba(201,168,76,.01)',220)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:NL},scales:{x:{grid:GR,ticks:{...TK,maxRotation:45,font:{size:9}}},y:{grid:GR,ticks:TK,min:80}}}});
+
+  mc('cSaleQ',{type:'bar',data:{labels:lbs,datasets:[{label:'New Sale',data:ns,backgroundColor:'rgba(192,21,42,.8)',borderRadius:2},{label:'Upsale',data:up,backgroundColor:'rgba(201,168,76,.65)',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#9C8070',font:{size:9},boxWidth:9}}},scales:{x:{grid:{display:false},ticks:{...TK,maxRotation:45,font:{size:9}}},y:{grid:GR,ticks:TK}}}});
+
+  mc('cDSAll',{type:'line',data:{labels:lbs,datasets:[
+    {label:'DS New Sale',data:dNS,borderColor:'#C0152A',borderWidth:2,tension:.4,pointRadius:2,fill:false},
+    {label:'DS Upsale',data:dUP,borderColor:'#C9A84C',borderWidth:2,tension:.4,pointRadius:2,fill:false},
+    {label:'DS Bán Lẻ DV',data:dML,borderColor:'#8a5050',borderWidth:1.5,tension:.4,pointRadius:2,fill:false,borderDash:[4,3]},
+    {label:'Retail SP',data:dRT,borderColor:'#a07040',borderWidth:1.5,tension:.4,pointRadius:2,fill:false,borderDash:[2,4]},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9C8070',font:{size:9},boxWidth:12,padding:9}}},scales:{x:{grid:GR,ticks:{...TK,maxRotation:45,font:{size:9}}},y:{grid:GR,ticks:{...TK,callback:v=>v+'tr'}}}}});
+
+  mc('cAvgV',{type:'line',data:{labels:lbs,datasets:[{label:'Gói New',data:aN,borderColor:'#C0152A',borderWidth:2,tension:.4,pointRadius:2,fill:false},{label:'Gói Up',data:aU,borderColor:'#C9A84C',borderWidth:2,tension:.4,pointRadius:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#9C8070',font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:v=>` ${(v.raw/1000).toFixed(0)}k đ`}}},scales:{x:{grid:GR,ticks:{...TK,maxRotation:45,font:{size:9}}},y:{grid:GR,ticks:{...TK,callback:v=>(v/1e6).toFixed(1)+'M'}}}}});
+
+  const wks=[{w:'Tuần 1',d:'1-6/4',s:0,l:6},{w:'Tuần 2',d:'7-13/4',s:6,l:7},{w:'Tuần 3',d:'14-20/4',s:13,l:7},{w:'Tuần 4',d:'21-26/4',s:20,l:6}];
+  const wd=wks.map(w=>({...w,nR:sum(D.dsNS.slice(w.s,w.s+w.l)),nS:sum(D.ns.slice(w.s,w.s+w.l)),uR:sum(D.dsUP.slice(w.s,w.s+w.l)),uS:sum(D.up.slice(w.s,w.s+w.l)),mR:sum(D.dsML.slice(w.s,w.s+w.l)),rR:sum(D.dsRT.slice(w.s,w.s+w.l)),tk:sum(D.kh.slice(w.s,w.s+w.l))}));
+
+  mc('cWkly',{type:'bar',data:{labels:wd.map(w=>w.w),datasets:[{label:'DS New',data:wd.map(w=>+w.nR.toFixed(1)),backgroundColor:'rgba(192,21,42,.8)',borderRadius:3},{label:'DS Up',data:wd.map(w=>+w.uR.toFixed(1)),backgroundColor:'rgba(201,168,76,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#9C8070',font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:v=>` ${v.raw.toFixed(1)} tr.đ`}}},scales:{x:{grid:{display:false},ticks:TK},y:{grid:GR,ticks:{...TK,callback:v=>v+'tr'}}}}});
+
+  $('wkbody').innerHTML=wd.map(w=>`<tr>
+    <td class="n">${w.w}</td><td style="color:var(--td)">${w.d}</td>
+    <td class="r" style="color:var(--gl);font-weight:600">${(w.nR+w.uR).toFixed(1)}</td><td class="r">${w.nS+w.uS}</td>
+    <td class="r">${w.nR.toFixed(1)}</td><td class="r">${w.nS}</td>
+    <td class="r">${w.uR.toFixed(1)}</td><td class="r">${w.uS}</td>
+    <td class="r">${w.mR.toFixed(1)}</td><td class="r">${w.rR.toFixed(1)}</td>
+    <td class="r">${w.tk.toLocaleString()}</td>
+  </tr>`).join('');
+}
+
+function renderAll(){renderTab0();renderTab1();renderTab2();}
+
+/* ══ APPS SCRIPT FETCH ══ */
+async function fetchFromScript(url){
+  showLoader(true,'Đang kết nối Google Sheet…');
+  setSyncStatus('spin','Đang tải…');
+  try{
+    const r=await fetch(url+'?sheet=all',{cache:'no-cache'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const json=await r.json();
+    if(!json.ok)throw new Error(json.error||'Script error');
+
+    const {tongquan,trungtam,nhanvien}=json.data;
+
+    // ── Parse Sheet 1: Tổng Quan ──
+    if(tongquan?.rows?.length){
+      parseSheet1(tongquan.rows,tongquan.headers);
+    }
+    // ── Parse Sheet 2: Trung Tâm ──
+    if(trungtam?.rows?.length){
+      parseSheet2(trungtam.rows,trungtam.headers);
+    }
+    // ── Parse Sheet 3: Nhân Viên ──
+    if(nhanvien?.rows?.length){
+      parseSheet3(nhanvien.rows,nhanvien.headers);
+    }
+
+    renderKPIs();renderActivity();renderAll();
+    setSyncStatus('live',`Live • ${new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}`);
+    $('setupBanner').classList.add('hidden');
+    $('finfo').textContent='Dữ liệu thật từ Google Sheet';
+    toast('✓ Đã kết nối Google Sheet thành công','ok');
+  }catch(e){
+    console.error(e);
+    setSyncStatus('','Lỗi – dùng demo');
+    toast('⚠ Không kết nối được: '+e.message+' – đang dùng demo data','err');
+  }
+  showLoader(false);
+}
+
+/* ── PARSER HELPERS ── */
+function findCol(headers,keywords){
+  for(const kw of keywords){
+    const i=headers.findIndex(h=>String(h).toLowerCase().includes(kw.toLowerCase()));
+    if(i>=0)return i;
+  }
+  return -1;
+}
+function parseNum(v){return parseFloat(String(v).replace(/,/g,'.').replace(/[^\d.]/g,''))||0}
+function parseIntN(v){return parseInt(String(v).replace(/[^\d]/g,''))||0}
+
+function parseSheet1(rows,headers){
+  // Tìm cột ngày, lượt đón KH, doanh thu, new sale SL, upsale SL, DS New, DS Up, DS ML, DS Retail, ktv
+  const hdr=headers.map(h=>String(h));
+  const cDate=findCol(hdr,['ngày','ngay','date','day']);
+  const cKH  =findCol(hdr,['lượt đón','luot don','tổng kh','tong kh','đón kh','don kh']);
+  const cRev =findCol(hdr,['doanh thu','ds tong','tổng ds','tong ds','revenue','total']);
+  const cNSSL=findCol(hdr,['sl new','số lượng new','sl ns','new sale sl','sl bán gói new']);
+  const cUPSL=findCol(hdr,['sl up','số lượng up','sl upsale','upsale sl','sl bán gói up']);
+  const cDNS =findCol(hdr,['ds new','doanh thu new','revenue new']);
+  const cDUP =findCol(hdr,['ds up','doanh thu up','revenue up','ds upsale']);
+  const cDML =findCol(hdr,['ds mua lẻ','ds muả lẻ','ds bán lẻ dv','doanh thu mua le']);
+  const cDRT =findCol(hdr,['retail','ds bán lẻ sp','doanh thu retail']);
+  const cKTV =findCol(hdr,['ktv','kỹ thuật viên','so ktv','sl ktv']);
+
+  if(cDate<0){toast('⚠ Sheet 1: Không tìm thấy cột ngày','err');return;}
+
+  const days=[],dates=[],kh=[],rv=[],ns=[],up=[],dsNS=[],dsUP=[],dsML=[],dsRT=[],ktv=[],wk=[];
+  let weekN=1,prevDay=0;
+
+  rows.forEach(r=>{
+    const rawDate=r[headers[cDate]]||r[Object.keys(r)[cDate]]||'';
+    if(!rawDate)return;
+    const dStr=String(rawDate).trim();
+    if(!dStr||dStr==='')return;
+
+    // Parse ngày
+    let dayNum=0,isoDate='';
+    const mDMY=dStr.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+    if(mDMY){
+      dayNum=parseInt(mDMY[1]);
+      const month=parseInt(mDMY[2]);
+      const year=mDMY[3]?(mDMY[3].length===2?'20'+mDMY[3]:mDMY[3]):'2026';
+      isoDate=`${year}-${String(month).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+    } else { return; }
+
+    if(prevDay>0&&dayNum<prevDay-5) weekN++;
+    prevDay=dayNum;
+
+    days.push(dStr);
+    dates.push(isoDate);
+    wk.push(weekN);
+
+    const colVal=(c)=>c>=0?(r[headers[c]]!==undefined?r[headers[c]]:r[Object.values(r)[c]]):0;
+    kh.push(parseIntN(colVal(cKH)));
+    rv.push(parseNum(colVal(cRev)));
+    ns.push(parseIntN(colVal(cNSSL)));
+    up.push(parseIntN(colVal(cUPSL)));
+    dsNS.push(parseNum(colVal(cDNS)));
+    dsUP.push(parseNum(colVal(cDUP)));
+    dsML.push(parseNum(colVal(cDML)));
+    dsRT.push(parseNum(colVal(cDRT)));
+    ktv.push(parseIntN(colVal(cKTV)));
+  });
+
+  if(days.length>0){
+    Object.assign(D,{days,dates,wk,kh,rv,ns,up,dsNS,dsUP,dsML,dsRT,ktv:ktv.some(v=>v>0)?ktv:D.ktv,aNS:D.aNS,aUP:D.aUP,appKH:D.appKH,vch:D.vch,ggm:D.ggm});
+    // Keep avg NS/UP arrays if same length, else keep demo
+    if(D.aNS.length!==days.length) D.aNS=days.map(()=>0);
+    if(D.aUP.length!==days.length) D.aUP=days.map(()=>0);
+    if(D.appKH.length!==days.length) D.appKH=days.map(()=>0);
+    if(D.vch.length!==days.length) D.vch=days.map(()=>0);
+    if(D.ggm.length!==days.length) D.ggm=days.map(()=>0);
+  }
+}
+
+function parseSheet2(rows,headers){
+  const hdr=headers.map(h=>String(h));
+  const cName=findCol(hdr,['trung tâm','tên trung tâm','center','ten tt','ten trung tam']);
+  const cRev =findCol(hdr,['doanh thu','ds','revenue']);
+  const cKHHH=findCol(hdr,['khhh','kh hội hàng','kh hoi hang','sl khhh','kh cu']);
+  const cNew =findCol(hdr,['kh mới','kh moi','sl kh mới','khách mới','new customer']);
+  const cNS  =findCol(hdr,['new sale','ns','sl new sale','gói new']);
+  const cUP  =findCol(hdr,['upsale','up','sl upsale','gói up']);
+  const cTurn=findCol(hdr,['turn','tổng turn','tong turn','lượt','luot']);
+  const cANS =findCol(hdr,['tb gói new','avg new','giá trị tb new','gia tri ns']);
+  const cAUP =findCol(hdr,['tb gói up','avg up','giá trị tb up','gia tri up']);
+
+  if(cName<0){toast('⚠ Sheet 2: Không tìm thấy cột Trung Tâm','err');return;}
+
+  const centers=[];
+  rows.forEach(r=>{
+    const name=String(r[headers[cName]]||'').trim();
+    if(!name)return;
+    const getV=(c,fn)=>c>=0?fn(r[headers[c]]||0):0;
+    const c={
+      n:name,
+      rev:getV(cRev,parseNum),
+      khhh:getV(cKHHH,parseIntN),
+      khMoi:getV(cNew,parseIntN),
+      ns:getV(cNS,parseIntN),
+      us:getV(cUP,parseIntN),
+      turn:getV(cTurn,parseIntN),
+      aNS:getV(cANS,parseNum),
+      aUP:getV(cAUP,parseNum),
+    };
+    c.tk=c.khhh+c.khMoi;
+    c.rNS=c.tk>0?c.ns/c.tk*100:0;
+    c.rUP=c.tk>0?c.us/c.tk*100:0;
+    centers.push(c);
+  });
+  if(centers.length>0) D.centers=centers.sort((a,b)=>b.rev-a.rev);
+}
+
+function parseSheet3(rows,headers){
+  const hdr=headers.map(h=>String(h));
+  // Sheet 3 thường là 1 row summary hoặc nhiều row theo ngày
+  // Thử detect dạng summary (1 row)
+  if(rows.length<=3){
+    // Summary row
+    const r=rows[0];
+    const getV=(kws,fn)=>{const c=findCol(hdr,kws);return c>=0?fn(r[headers[c]]||0):0};
+    D.kpi2[1].v=getV(['ds bán gói','ds new up','tong goi'],parseNum).toFixed(1);
+    D.kpi2[2].v=getV(['ds bán lẻ','ds le','ban le dv'],parseNum).toFixed(1);
+    D.kpi2[3].v=getV(['retail','ds retail'],parseNum).toFixed(1);
+  }
+  // Nếu theo ngày giống sheet 1 thì cũng parse được
+}
+
+/* ══ CONFIG ══ */
+function openCfg(){
+  const sv=JSON.parse(localStorage.getItem('asense_cfg')||'{}');
+  $('inUrl').value=sv.url||'';
+  $('inInterval').value=sv.interval||'300000';
+  $('cfgModal').classList.add('show');
+}
+function closeCfg(){$('cfgModal').classList.remove('show')}
+async function saveCfgAndFetch(){
+  const url=$('inUrl').value.trim();
+  if(!url){toast('⚠ Vui lòng nhập URL Apps Script','err');return;}
+  rMs=parseInt($('inInterval').value)||300000;
+  localStorage.setItem('asense_cfg',JSON.stringify({url,interval:rMs}));
+  closeCfg();
+  await fetchFromScript(url);
+  setupAutoRefresh(url);
+}
+function useDemoData(){
+  D=JSON.parse(JSON.stringify(DEMO));
+  D.centers.forEach(c=>{c.tk=c.khhh+c.khMoi;c.rNS=c.tk>0?c.ns/c.tk*100:0;c.rUP=c.tk>0?c.us/c.tk*100:0});
+  renderKPIs();renderActivity();renderAll();
+  setSyncStatus('','Demo data');
+  toast('Đang dùng demo data','');
+}
+
+/* ══ AUTO REFRESH ══ */
+function setupAutoRefresh(url){
+  if(rTimer)clearInterval(rTimer);
+  if(cdTimer)clearInterval(cdTimer);
+  if(!rMs||rMs===0){$('timer').textContent='';return;}
+  nextR=Date.now()+rMs;
+  rTimer=setInterval(()=>{fetchFromScript(url);nextR=Date.now()+rMs;},rMs);
+  cdTimer=setInterval(()=>{
+    const s=Math.max(0,Math.round((nextR-Date.now())/1000));
+    $('timer').textContent=`Refresh: ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  },1000);
+}
+function manualRefresh(){
+  const sv=JSON.parse(localStorage.getItem('asense_cfg')||'{}');
+  if(sv.url)fetchFromScript(sv.url);
+  else toast('Chưa cấu hình URL – bấm ⚙ Cấu Hình','err');
+}
+
+/* ══ UI ══ */
+function setSyncStatus(type,label){
+  const d=$('sdot');
+  d.className='sdot'+(type==='live'?' live':type==='spin'?' spin':'');
+  $('slabel').textContent=label;
+}
+function showLoader(show,txt='Đang tải…'){
+  $('ltxt').textContent=txt;
+  $('loader').classList.toggle('show',show);
+}
+function toast(msg,type=''){
+  const t=$('toast');
+  t.textContent=msg;t.className='toast'+(type?' '+type:'');
+  t.classList.add('show');
+  clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),3500);
+}
+function setTab(i){
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('on',j===i));
+  document.querySelectorAll('.tabbt').forEach((b,j)=>b.classList.toggle('on',j===i));
+}
+
+/* ══ INIT ══ */
+(()=>{
+  // Load saved cfg
+  const sv=JSON.parse(localStorage.getItem('asense_cfg')||'{}');
+  if(sv.interval)rMs=parseInt(sv.interval)||300000;
+
+  // Render demo first
+  useDemoData();
+
+  // Auto-connect if URL saved
+  if(sv.url){
+    fetchFromScript(sv.url).then(()=>setupAutoRefresh(sv.url));
+  } else {
+    setTimeout(()=>toast('💡 Bấm ⚙ Cấu Hình → nhập URL Apps Script để xem dữ liệu thật',''),1000);
+  }
+})();
+</script>
+</body>
+</html>
